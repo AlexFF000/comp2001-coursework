@@ -46,7 +46,6 @@ namespace AuthAPI
             }
 
             app.UseHttpsRedirection();
-            //app.UseMvc();
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
