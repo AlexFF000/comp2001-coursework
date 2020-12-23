@@ -1,6 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System.Linq;
+using System.Linq.Expressions;
+
 
 #nullable disable
 
@@ -77,7 +80,11 @@ namespace AuthAPI.Models
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => e.Email, "UQ__Users__AB6E61645165AA5F")
+                /* 
+                This overload is only added in EF 5, so will give error: "Cannot convert lambda expression to type 'string' because it is not a delegate type
+                entity.HasIndex(e => e.Email, "UQ__Users__AB6E61645165AA5F");
+                */
+                entity.HasIndex(e => e.Email)
                     .IsUnique();
 
                 entity.Property(e => e.UserId).HasColumnName("user_id");
