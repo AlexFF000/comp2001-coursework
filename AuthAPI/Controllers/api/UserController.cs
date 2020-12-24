@@ -73,16 +73,9 @@ namespace AuthAPI.Controllers.api
         [HttpDelete("{id}")]
         public async Task<ActionResult<User>> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return user;
+            // DELETE request
+            RemoveUser(id);
+            return NoContent();
         }
 
         public bool ValidateUser(User details)
@@ -133,6 +126,13 @@ namespace AuthAPI.Controllers.api
                 details.UserId = Convert.ToInt32(responseComponents[1]);
             }
             return Convert.ToInt32(responseComponents[0]);
+        }
+
+        public void RemoveUser(int idToRemove)
+        {
+            // Use DeleteUser stored procedure to delete the user with the given Id
+            _context.Database.ExecuteSqlRaw("EXEC DeleteUser @id",
+                new SqlParameter("@id", idToRemove));
         }
 
         public object ReturnDbNullIfEmpty(string inputString)
