@@ -40,29 +40,8 @@ namespace AuthAPI.Controllers.api
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(int id, User user)
         {
-            if (id != user.UserId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+            // PUT request (update existing user details)
+            UpdateUser(id, user);
             return NoContent();
         }
 
@@ -106,11 +85,6 @@ namespace AuthAPI.Controllers.api
             return user;
         }
 
-        private bool UserExists(int id)
-        {
-            return _context.Users.Any(e => e.UserId == id);
-        }
-
         public bool ValidateUser(User details)
         {
             // Use database stored procedure to check an email and password
@@ -122,6 +96,18 @@ namespace AuthAPI.Controllers.api
                 new SqlParameter("@Password", details.Password));
             // Return true if response is 1 (meaning validation was successful) and false otherwise
             return (int)response.Value == 1;
+        }
+
+        public void UpdateUser(int idToUpdate, User details)
+        {
+            // Use database stored procedure to change user details
+            // Must replace any empty strings with null, as the stored procedure will not update fields with null values supplied
+            _context.Database.ExecuteSqlRaw("EXEC UpdateUser @FirstName, @LastName, @Email, @Password, @id",
+                new SqlParameter("@FirstName", ReturnDbNullIfEmpty(details.FirstName)),
+                new SqlParameter("@LastName", ReturnDbNullIfEmpty(details.LastName)),
+                new SqlParameter("@Email", ReturnDbNullIfEmpty(details.Email)),
+                new SqlParameter("@Password", ReturnDbNullIfEmpty(details.Password)),
+                new SqlParameter("@id", idToUpdate));
         }
 
         public int RegisterUser(User details)
@@ -149,5 +135,10 @@ namespace AuthAPI.Controllers.api
             return Convert.ToInt32(responseComponents[0]);
         }
 
+        public object ReturnDbNullIfEmpty(string inputString)
+        {
+            // Return a DbNull object if the string is empty, and return the string if not empty
+            return String.IsNullOrWhiteSpace(inputString) ? (object)DBNull.Value : (object)inputString;
+        }
     }
 }
