@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using Microsoft.Data.SqlClient;
 using AuthAPI.Models;
 
 namespace AuthAPI.Controllers.api
@@ -79,10 +81,22 @@ namespace AuthAPI.Controllers.api
         [HttpPost]
         public async Task<ActionResult<User>> PostUser(User user)
         {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.UserId }, user);
+            // POST request (create new user)
+            // Call Register stored procedure
+            int code = RegisterUser(user);
+            // Return status code and (if successful) the new userId
+            if (code == 200)
+            {
+                Dictionary<string, int> body = new Dictionary<string, int>()
+                {
+                    {"UserID", user.UserId }
+                };
+                return Ok(body);
+            }
+            else
+            {
+                return StatusCode(code);
+            }
         }
 
         // DELETE: api/User/5
@@ -105,5 +119,31 @@ namespace AuthAPI.Controllers.api
         {
             return _context.Users.Any(e => e.UserId == id);
         }
+
+        public int RegisterUser(User details)
+        {
+            // Try to create new user, and return response code
+            // Pass back user id by changing userId property of details
+
+            SqlParameter response = new SqlParameter("@ResponseMessage", SqlDbType.VarChar, 10);
+            response.Direction = ParameterDirection.Output;
+            _context.Database.ExecuteSqlRaw("EXEC Register @FirstName, @LastName, @Email, @Password, @ResponseMessage OUTPUT",
+                new SqlParameter("@FirstName", details.FirstName),
+                new SqlParameter("@LastName", details.LastName),
+                new SqlParameter("@Email", details.Email),
+                new SqlParameter("@Password", details.Password),
+                response);
+            // Process response
+            // The stored procedure separates the response code and user Id with a comma, so split the string on commas
+            string responseString = response.Value.ToString();
+            string[] responseComponents = responseString.Split(',');
+            if (responseComponents[0] == "200")
+            {
+                // New user was created successfully, so pass back the new user id in the User object
+                details.UserId = Convert.ToInt32(responseComponents[1]);
+            }
+            return Convert.ToInt32(responseComponents[0]);
+        }
+
     }
 }
