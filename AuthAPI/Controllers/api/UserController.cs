@@ -24,9 +24,14 @@ namespace AuthAPI.Controllers.api
 
         // GET: api/User
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers(User user)
         {
-            return await _context.Users.ToListAsync();
+            Dictionary<string, bool> body = new Dictionary<string, bool>()
+            {
+                {"verified", ValidateUser(user) }
+            };
+            // Return status code 200 and {'verified': true} if the credentials match or {'verified': false} if not
+            return Ok(body);
         }
 
         // GET: api/User/5
@@ -118,6 +123,19 @@ namespace AuthAPI.Controllers.api
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.UserId == id);
+        }
+
+        public bool ValidateUser(User details)
+        {
+            // Use database stored procedure to check an email and password
+            SqlParameter response = new SqlParameter("@Response", SqlDbType.Int);
+            response.Direction = ParameterDirection.Output;
+            _context.Database.ExecuteSqlRaw("EXEC @Response = ValidateUser @Email, @Password",
+                response,
+                new SqlParameter("@Email", details.Email),
+                new SqlParameter("@Password", details.Password));
+            // Return true if response is 1 (meaning validation was successful) and false otherwise
+            return (int)response.Value == 1;
         }
 
         public int RegisterUser(User details)
