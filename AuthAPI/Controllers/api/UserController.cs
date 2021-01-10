@@ -78,6 +78,7 @@ namespace AuthAPI.Controllers.api
             return NoContent();
         }
 
+        [NonAction]
         public bool ValidateUser(User details)
         {
             // Use database stored procedure to check an email and password
@@ -91,6 +92,7 @@ namespace AuthAPI.Controllers.api
             return (int)response.Value == 1;
         }
 
+        [NonAction]
         public void UpdateUser(int idToUpdate, User details)
         {
             // Use database stored procedure to change user details
@@ -103,6 +105,7 @@ namespace AuthAPI.Controllers.api
                 new SqlParameter("@id", idToUpdate));
         }
 
+        [NonAction]
         public int RegisterUser(User details)
         {
             // Try to create new user, and return response code
@@ -128,6 +131,7 @@ namespace AuthAPI.Controllers.api
             return Convert.ToInt32(responseComponents[0]);
         }
 
+        [NonAction]
         public void RemoveUser(int idToRemove)
         {
             // Use DeleteUser stored procedure to delete the user with the given Id
@@ -135,6 +139,7 @@ namespace AuthAPI.Controllers.api
                 new SqlParameter("@id", idToRemove));
         }
 
+        [NonAction]
         public object ReturnDbNullIfEmpty(string inputString)
         {
             // Return a DbNull object if the string is empty, and return the string if not empty
