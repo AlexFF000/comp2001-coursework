@@ -24,7 +24,7 @@ namespace AuthAPI.Controllers.api
 
         // GET: api/User
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers(User user)
+        public async Task<ActionResult<IEnumerable<User>>> Login(User user)
         {
             Dictionary<string, bool> body = new Dictionary<string, bool>()
             {
@@ -38,7 +38,7 @@ namespace AuthAPI.Controllers.api
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<IActionResult> Edit(int id, User user)
         {
             // PUT request (update existing user details)
             UpdateUser(id, user);
@@ -49,7 +49,7 @@ namespace AuthAPI.Controllers.api
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> Create(User user)
         {
             // POST request (create new user)
             // Call Register stored procedure
@@ -71,7 +71,7 @@ namespace AuthAPI.Controllers.api
 
         // DELETE: api/User/5
         [HttpDelete("{id}")]
-        public async Task<ActionResult<User>> DeleteUser(int id)
+        public async Task<ActionResult<User>> Delete(int id)
         {
             // DELETE request
             RemoveUser(id);
