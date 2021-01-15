@@ -26,9 +26,11 @@ namespace AuthAPI.Controllers.api
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> Login(User user)
         {
+
+            bool success = await ValidateUser(user);
             Dictionary<string, bool> body = new Dictionary<string, bool>()
             {
-                {"verified", ValidateUser(user) }
+                {"verified", success }
             };
             // Return status code 200 and {'verified': true} if the credentials match or {'verified': false} if not
             return Ok(body);
@@ -41,7 +43,7 @@ namespace AuthAPI.Controllers.api
         public async Task<IActionResult> Edit(int id, User user)
         {
             // PUT request (update existing user details)
-            UpdateUser(id, user);
+            await UpdateUser(id, user);
             return NoContent();
         }
 
@@ -53,7 +55,7 @@ namespace AuthAPI.Controllers.api
         {
             // POST request (create new user)
             // Call Register stored procedure
-            int code = RegisterUser(user);
+            int code = await RegisterUser(user);
             // Return status code and (if successful) the new userId
             if (code == 200)
             {
@@ -74,17 +76,18 @@ namespace AuthAPI.Controllers.api
         public async Task<ActionResult<User>> Delete(int id)
         {
             // DELETE request
-            RemoveUser(id);
+            await RemoveUser(id);
             return NoContent();
         }
 
         [NonAction]
-        public bool ValidateUser(User details)
+        public async Task<bool> ValidateUser(User details)
         {
             // Use database stored procedure to check an email and password
             SqlParameter response = new SqlParameter("@Response", SqlDbType.Int);
             response.Direction = ParameterDirection.Output;
-            _context.Database.ExecuteSqlRaw("EXEC @Response = ValidateUser @Email, @Password",
+            // Use ExecuteSqlRawAsync and await the result to allow this thread to be returned to the pool while waiting for the database response
+            await _context.Database.ExecuteSqlRawAsync("EXEC @Response = ValidateUser @Email, @Password",
                 response,
                 new SqlParameter("@Email", details.Email),
                 new SqlParameter("@Password", details.Password));
@@ -93,11 +96,11 @@ namespace AuthAPI.Controllers.api
         }
 
         [NonAction]
-        public void UpdateUser(int idToUpdate, User details)
+        public async Task UpdateUser(int idToUpdate, User details)
         {
             // Use database stored procedure to change user details
             // Must replace any empty strings with null, as the stored procedure will not update fields with null values supplied
-            _context.Database.ExecuteSqlRaw("EXEC UpdateUser @FirstName, @LastName, @Email, @Password, @id",
+            await _context.Database.ExecuteSqlRawAsync("EXEC UpdateUser @FirstName, @LastName, @Email, @Password, @id",
                 new SqlParameter("@FirstName", ReturnDbNullIfEmpty(details.FirstName)),
                 new SqlParameter("@LastName", ReturnDbNullIfEmpty(details.LastName)),
                 new SqlParameter("@Email", ReturnDbNullIfEmpty(details.Email)),
@@ -106,14 +109,14 @@ namespace AuthAPI.Controllers.api
         }
 
         [NonAction]
-        public int RegisterUser(User details)
+        public async Task<int> RegisterUser(User details)
         {
             // Try to create new user, and return response code
             // Pass back user id by changing userId property of details
 
             SqlParameter response = new SqlParameter("@ResponseMessage", SqlDbType.VarChar, 10);
             response.Direction = ParameterDirection.Output;
-            _context.Database.ExecuteSqlRaw("EXEC Register @FirstName, @LastName, @Email, @Password, @ResponseMessage OUTPUT",
+            await _context.Database.ExecuteSqlRawAsync("EXEC Register @FirstName, @LastName, @Email, @Password, @ResponseMessage OUTPUT",
                 new SqlParameter("@FirstName", details.FirstName),
                 new SqlParameter("@LastName", details.LastName),
                 new SqlParameter("@Email", details.Email),
@@ -132,10 +135,10 @@ namespace AuthAPI.Controllers.api
         }
 
         [NonAction]
-        public void RemoveUser(int idToRemove)
+        public async Task RemoveUser(int idToRemove)
         {
             // Use DeleteUser stored procedure to delete the user with the given Id
-            _context.Database.ExecuteSqlRaw("EXEC DeleteUser @id",
+            await _context.Database.ExecuteSqlRawAsync("EXEC DeleteUser @id",
                 new SqlParameter("@id", idToRemove));
         }
 
