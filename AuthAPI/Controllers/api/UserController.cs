@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using Microsoft.Data.SqlClient;
@@ -15,6 +17,10 @@ namespace AuthAPI.Controllers.api
     [ApiController]
     public class UserController : ControllerBase
     {
+        // Details for hashing the passwords
+        private static string Salt = "baxScwIOxIX3/XadCtwdMg==";
+        private static int HashIterations = 10000;
+        private static int HashLength = 32;
         private readonly COMP2001_ARedmondContext _context;
 
         public UserController(COMP2001_ARedmondContext context)
@@ -26,7 +32,6 @@ namespace AuthAPI.Controllers.api
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> Login(User user)
         {
-
             bool success = await ValidateUser(user);
             Dictionary<string, bool> body = new Dictionary<string, bool>()
             {
@@ -90,7 +95,7 @@ namespace AuthAPI.Controllers.api
             await _context.Database.ExecuteSqlRawAsync("EXEC @Response = ValidateUser @Email, @Password",
                 response,
                 new SqlParameter("@Email", details.Email),
-                new SqlParameter("@Password", details.Password));
+                new SqlParameter("@Password", HashPassword(details.Password)));
             // Return true if response is 1 (meaning validation was successful) and false otherwise
             return (int)response.Value == 1;
         }
@@ -104,7 +109,7 @@ namespace AuthAPI.Controllers.api
                 new SqlParameter("@FirstName", ReturnDbNullIfEmpty(details.FirstName)),
                 new SqlParameter("@LastName", ReturnDbNullIfEmpty(details.LastName)),
                 new SqlParameter("@Email", ReturnDbNullIfEmpty(details.Email)),
-                new SqlParameter("@Password", ReturnDbNullIfEmpty(details.Password)),
+                new SqlParameter("@Password", ReturnDbNullIfEmpty(HashPassword(details.Password))),
                 new SqlParameter("@id", idToUpdate));
         }
 
@@ -120,7 +125,7 @@ namespace AuthAPI.Controllers.api
                 new SqlParameter("@FirstName", details.FirstName),
                 new SqlParameter("@LastName", details.LastName),
                 new SqlParameter("@Email", details.Email),
-                new SqlParameter("@Password", details.Password),
+                new SqlParameter("@Password", HashPassword(details.Password)),
                 response);
             // Process response
             // The stored procedure separates the response code and user Id with a comma, so split the string on commas
@@ -147,6 +152,20 @@ namespace AuthAPI.Controllers.api
         {
             // Return a DbNull object if the string is empty, and return the string if not empty
             return String.IsNullOrWhiteSpace(inputString) ? (object)DBNull.Value : (object)inputString;
+        }
+
+        [NonAction]
+        public string HashPassword(string password)
+        {
+            // Hash a password with ASP.NET's inbuilt PBKDF2 implementation
+            // Do not hash and simply return null if a blank string was provided (allowing ReturnDbNullIfEmpty to work)
+            if (String.IsNullOrWhiteSpace(password)) return null;
+            return Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password,
+                Convert.FromBase64String(Salt),
+                KeyDerivationPrf.HMACSHA1,
+                HashIterations,
+                HashLength));
         }
     }
 }
