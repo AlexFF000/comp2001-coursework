@@ -3,17 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Data;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.Data.SqlClient;
 using AuthAPI.Models;
 
 namespace AuthAPI.Controllers.api
 {
     [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -30,9 +38,18 @@ namespace AuthAPI.Controllers.api
 
         // GET: api/User
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<User>>> Login(User user)
         {
             bool success = await ValidateUser(user);
+            if (success)
+            {
+                // Generate Jwt token, and send it back to the client in the Authorization header of the response
+                int userId = await GetUserId(user);
+                string token = GenerateToken(userId);
+                HttpContext.Response.Headers.Add("Authorization", token);
+
+            }
             Dictionary<string, bool> body = new Dictionary<string, bool>()
             {
                 {"verified", success }
@@ -48,8 +65,17 @@ namespace AuthAPI.Controllers.api
         public async Task<IActionResult> Edit(int id, User user)
         {
             // PUT request (update existing user details)
-            await UpdateUser(id, user);
-            return NoContent();
+            if (HttpContext.User.Claims.FirstOrDefault(name => name.Type == "userId").Value == id.ToString())
+            {
+                // Only allow the user to be modified if the request contains an authenticated jwt token with the id of the user to be modified
+                await UpdateUser(id, user);
+                return NoContent();
+            }
+            else
+            {
+                return Unauthorized();
+            }
+            
         }
 
         // POST: api/User
@@ -81,16 +107,25 @@ namespace AuthAPI.Controllers.api
         public async Task<ActionResult<User>> Delete(int id)
         {
             // DELETE request
-            await RemoveUser(id);
-            return NoContent();
+            if (HttpContext.User.Claims.FirstOrDefault(name => name.Type == "userId").Value == id.ToString())
+            {
+                // Only allow the user to be deleted if the request contains an authenticated jwt token with the id of the user to be deleted
+                await RemoveUser(id);
+                return NoContent();
+            }
+            {
+                return Unauthorized();
+            }
         }
 
         [NonAction]
         public async Task<bool> ValidateUser(User details)
         {
             // Use database stored procedure to check an email and password
-            SqlParameter response = new SqlParameter("@Response", SqlDbType.Int);
-            response.Direction = ParameterDirection.Output;
+            SqlParameter response = new SqlParameter("@Response", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
             // Use ExecuteSqlRawAsync and await the result to allow this thread to be returned to the pool while waiting for the database response
             await _context.Database.ExecuteSqlRawAsync("EXEC @Response = ValidateUser @Email, @Password",
                 response,
@@ -119,8 +154,10 @@ namespace AuthAPI.Controllers.api
             // Try to create new user, and return response code
             // Pass back user id by changing userId property of details
 
-            SqlParameter response = new SqlParameter("@ResponseMessage", SqlDbType.VarChar, 10);
-            response.Direction = ParameterDirection.Output;
+            SqlParameter response = new SqlParameter("@ResponseMessage", SqlDbType.VarChar, 10)
+            {
+                Direction = ParameterDirection.Output
+            };
             await _context.Database.ExecuteSqlRawAsync("EXEC Register @FirstName, @LastName, @Email, @Password, @ResponseMessage OUTPUT",
                 new SqlParameter("@FirstName", details.FirstName),
                 new SqlParameter("@LastName", details.LastName),
@@ -148,6 +185,20 @@ namespace AuthAPI.Controllers.api
         }
 
         [NonAction]
+        public async Task<int> GetUserId(User user)
+        {
+            // Use GetUserId stored procedure to get the id of a user from an email address
+            SqlParameter response = new SqlParameter("@id", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+            await _context.Database.ExecuteSqlRawAsync("EXEC GetUserId @email, @id OUTPUT",
+                new SqlParameter("@email", user.Email),
+                response);
+            return Convert.ToInt32(response.Value);
+        }
+
+        [NonAction]
         public object ReturnDbNullIfEmpty(string inputString)
         {
             // Return a DbNull object if the string is empty, and return the string if not empty
@@ -166,6 +217,22 @@ namespace AuthAPI.Controllers.api
                 KeyDerivationPrf.HMACSHA1,
                 HashIterations,
                 HashLength));
+        }
+
+        [NonAction]
+        public string GenerateToken(int userId)
+        {
+            SecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Startup.PrivateKey));
+            SigningCredentials credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            // Store the id of the logged in user in the token payload
+            Claim[] details = new Claim[]
+            {
+                new Claim("userId", userId.ToString())
+            };
+            // Create a token that expires after 15 minutes
+            JwtSecurityToken token = new JwtSecurityToken(expires: DateTime.Now.AddMinutes(15), signingCredentials: credentials, claims: details);
+            // Return the token in the correct string format
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
