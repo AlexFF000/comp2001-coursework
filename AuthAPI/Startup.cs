@@ -26,7 +26,7 @@ namespace AuthAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1).AddXmlDataContractSerializerFormatters();
-            services.AddDbContext<COMP2001_ARedmondContext>(options => options.UseSqlServer(Configuration.GetConnectionString("socem1")));
+            services.AddDbContext<DataAccess>();
             services.AddControllers();
             // Fetch private key used for signing tokens from appsettings
             PrivateKey = Configuration.GetValue<string>("PrivateKey");
