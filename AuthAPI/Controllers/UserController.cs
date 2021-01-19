@@ -36,7 +36,7 @@ namespace AuthAPI.Controllers.api
         // GET: api/User
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<User>>> Login(User user)
+        public async Task<ActionResult<IEnumerable<User>>> Get(User user)
         {
             bool success = await ValidateUser(user);
             if (success)
@@ -59,7 +59,7 @@ namespace AuthAPI.Controllers.api
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> Edit(int id, User user)
+        public async Task<IActionResult> Put(int id, User user)
         {
             // PUT request (update existing user details)
             if (HttpContext.User.Claims.FirstOrDefault(name => name.Type == "userId").Value == id.ToString())
@@ -79,7 +79,7 @@ namespace AuthAPI.Controllers.api
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<User>> Create(User user)
+        public async Task<ActionResult<User>> Post(User user)
         {
             // POST request (create new user)
             // Call Register stored procedure
