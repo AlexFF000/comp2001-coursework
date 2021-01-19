@@ -151,10 +151,10 @@ namespace AuthAPI.Models
                 Direction = ParameterDirection.Output
             };
             Database.ExecuteSqlRaw("EXEC Register @FirstName, @LastName, @Email, @Password, @ResponseMessage OUTPUT",
-                new SqlParameter("@FirstName", details.FirstName),
-                new SqlParameter("@LastName", details.LastName),
-                new SqlParameter("@Email", details.Email),
-                new SqlParameter("@Password", HashPassword(details.Password)),
+                new SqlParameter("@FirstName", ReturnDbNullIfEmpty(details.FirstName)),
+                new SqlParameter("@LastName", ReturnDbNullIfEmpty(details.LastName)),
+                new SqlParameter("@Email", ReturnDbNullIfEmpty(details.Email)),
+                new SqlParameter("@Password", ReturnDbNullIfEmpty(HashPassword(details.Password))),
                 response);
             // Process response
             // The stored procedure separates the response code and user Id with a comma, so split the string on commas
