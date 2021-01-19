@@ -15,9 +15,9 @@ namespace AuthAPI.Models
     {
         private string Connection;
         // Details for hashing the passwords
-        private static string Salt = "baxScwIOxIX3/XadCtwdMg==";
-        private static int HashIterations = 10000;
-        private static int HashLength = 32;
+        private string Salt;
+        private int HashIterations;
+        private int HashLength;
 
         public DataAccess()
         {
@@ -28,6 +28,10 @@ namespace AuthAPI.Models
         {
             // Load information in from appsettings.json
             Connection = configuration.GetConnectionString("socem1");
+            IConfigurationSection hashSettings = configuration.GetSection("HashSettings");
+            Salt = hashSettings.GetValue<string>("Salt");
+            HashIterations = hashSettings.GetValue<int>("HashIterations");
+            HashLength = hashSettings.GetValue<int>("HashLength");
         }
 
         public virtual DbSet<Password> Passwords { get; set; }
