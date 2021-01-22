@@ -63,7 +63,7 @@ function convertCoordinatesArray(array $coords){
         $osPoint = new Point($location[0], $location[1], $osFormat);
         $wgsPoint = $proj->transform($wgsFormat, $osPoint);
         $xyz = $wgsPoint->toArray();
-        array_push($converted, [$xyz[0], $xyz[1]]);
+        array_push($converted, [$xyz[1], $xyz[0]]);
     }
     return $converted;
 }
