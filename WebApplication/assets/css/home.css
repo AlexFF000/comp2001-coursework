@@ -1,0 +1,5 @@
+.vertical_centre{
+    top: 50%;
+    bottom: 50%;
+    transform: translateY(50%);
+}
