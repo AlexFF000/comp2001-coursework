@@ -1,6 +1,16 @@
 <?php
 // Parses relevant data from geoJSON dataset file into a JSON-LD formatted PHP array
+require_once("dependencies/proj4php-2.0.12/vendor/autoload.php");
+use proj4php\Point;
+use proj4php\Proj;
+use proj4php\Proj4php;
 const SCHEMA = "https://schema.org";
+
+// Load projection objects as globals as they take some time to initialise
+$proj = new Proj4php();
+$osFormat = new Proj("EPSG:27700", $proj);
+$wgsFormat = new Proj("EPSG:4326", $proj);
+
 
 function getJSONLD($dataFilePath){
     // Function to be called from other PHP files to return the dataset as a JSON-LD PHP array
@@ -40,9 +50,22 @@ function toRoute($data){
         "@type" => "Place",
         "geo" =>[
         "@type"=>"GeoShape",
-        "line"=> $data["geometry"]["coordinates"]
+        "line"=> convertCoordinatesArray($data["geometry"]["coordinates"])
         ]
     ];
+}
+
+function convertCoordinatesArray(array $coords){
+    // Use Proj4PHP to convert coordinates from EPSG:27700 (Ordnance Survey) format to more common WGS84 format
+    global $proj, $osFormat, $wgsFormat;
+    $converted = [];
+    foreach ($coords as $location){
+        $osPoint = new Point($location[0], $location[1], $osFormat);
+        $wgsPoint = $proj->transform($wgsFormat, $osPoint);
+        $xyz = $wgsPoint->toArray();
+        array_push($converted, [$xyz[0], $xyz[1]]);
+    }
+    return $converted;
 }
 
 function handleExceptions($severity, $message, $file, $line, array $context = []){  // Do not accept Throwable to maintain compatibility with PHP > 7, provide a default for $context because it is deprecated in PHP 7.2 so will not be passed

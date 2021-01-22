@@ -3,5 +3,6 @@
 require_once("../processDataset.php");
 const DATAFILE = "../plymouth rights of way dataset.geojson";
 
-header("Content-Type: application/json");
-echo json_encode(getJSONLD(DATAFILE));
+$data = json_encode(getJSONLD(DATAFILE));
+header("Content-Type: application/json; charset=utf8");
+echo $data;
