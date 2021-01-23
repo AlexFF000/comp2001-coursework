@@ -1,5 +1,6 @@
 <?php
 // Parses relevant data from geoJSON dataset file into a JSON-LD formatted PHP array
+
 require_once("dependencies/proj4php-2.0.12/vendor/autoload.php");
 use proj4php\Point;
 use proj4php\Proj;
