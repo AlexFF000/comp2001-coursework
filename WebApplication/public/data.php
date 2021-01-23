@@ -23,8 +23,8 @@ include("navigation.php");
 <body>
 <!-- Main Content -->
 <div class="container">
-    <h1 class="text-center">Right of Way Routes</h1>
-    <div id="map_area" class="col h-100 text-center map_area">
+    <h1 class="text-center" role="heading">Right of Way Routes</h1>
+    <div id="map_area" class="col h-100 text-center map_area" role="main">
         <p>The lines on the map represent right of way routes around Plymouth, as specified in <a href="https://plymouth.thedata.place/dataset/public-rights-of-way">the dataset</a></p>
         <a href="#" onclick="openColourPicker();">Change line colour</a>
         <div class="row">
@@ -35,7 +35,7 @@ include("navigation.php");
 
 <!-- Colour picker dialog-->
 <div class="page_cover" id="page_cover">
-    <div class="colour_dialog center-text">
+    <div class="colour_dialog center-text" role="dialog">
         <div class="row center-text">
             <div class="col justify-self-center">
                 <label for="colour_button" class="colour_button_label">Change line colour:</label>

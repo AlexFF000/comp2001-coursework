@@ -16,8 +16,8 @@ include("navigation.php");
 </head>
 <div>
 <div class="container h-100 text-center">
-    <h1>Right of Way Routes</h1>
-    <div class="align-items-center vertical_centre">
+    <h1 role="heading">Right of Way Routes</h1>
+    <div class="align-items-center vertical_centre" role="main">
     <div class="row">
         <div class="col">
     <p>This right of way route locator is a linked data web application for ramblers which presents right of way routes around Plymouth in both <a href="data.php">human</a> and <a href="../route">machine</a> readable formats</p>
@@ -42,7 +42,7 @@ include("navigation.php");
     </div>
     <div class="row">
         <div class="col">
-        <button type="button" class="btn btn-primary" onclick="window.location.href='data.php'">View Routes</button>
+        <button type="button" class="btn btn-primary" onclick="window.location.href='data.php'" role="button">View Routes</button>
         </div>
     </div>
 </div>
