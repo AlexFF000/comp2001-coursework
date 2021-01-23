@@ -19,7 +19,7 @@ let http = new XMLHttpRequest();
 http.onreadystatechange = function (){
     if (this.readyState == 4 && this.status == 200){
         // Display routes as polylines on the map
-        let routes = JSON.parse(this.responseText)["Route"];
+        let routes = JSON.parse(this.responseText)["Place"];
         for (let i = 0; i < routes.length; i++){
             let coords = routes[i]["geo"]["line"];
             lines.push(L.polyline(coords, {color: lineColour}).addTo(map));

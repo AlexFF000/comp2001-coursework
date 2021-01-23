@@ -41,7 +41,7 @@ function toJSONLD($data){
     foreach ($data["features"] as $datum){
         array_push($routes, toRoute($datum));
     }
-    return ["@context"=>SCHEMA, "Route"=>$routes];
+    return ["@context"=>SCHEMA, "Place"=>$routes];
 }
 
 function toRoute($data){
