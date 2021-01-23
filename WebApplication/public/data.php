@@ -21,25 +21,55 @@ include("navigation.php");
     <title>Right of Way Routes</title>
 </head>
 <body>
+<!-- Main Content -->
 <div class="container">
     <h1 class="text-center">Right of Way Routes</h1>
     <div id="map_area" class="col h-100 text-center map_area">
         <p>The lines on the map represent right of way routes around Plymouth, as specified in <a href="https://plymouth.thedata.place/dataset/public-rights-of-way">the dataset</a></p>
+        <a href="#" onclick="openColourPicker();">Change line colour</a>
         <div class="row">
             <div id="map" class="col h-100 map"></div>
         </div>
     </div>
 </div>
 
+<!-- Colour picker dialog-->
+<div class="page_cover" id="page_cover">
+    <div class="colour_dialog center-text">
+        <div class="row center-text">
+            <div class="col justify-self-center">
+                <label for="colour_button" class="colour_button_label">Change line colour:</label>
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col">
+                <input id="colour_button" type="color" class="colour_button"/>
+            </div>
+        </div>
+        <div class = "row">
+            <div class="col">
+                <button type="button" class="colour_dialog_cancel" onclick="closeColourPicker();">Cancel</button>
+            </div>
+            <div class="col">
+                <button type="button" class="colour_dialog_ok" onclick="chooseColour();">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
 <script>
+    var lineColour = "#ff0000";
+    var lines = [];
     // Setup map
     var map = L.map("map").setView([50.376389, -4.143841], 13);
     L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
-        attribution: "mapbox",
+        attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
         tileSize: 512,
         id: "mapbox/streets-v11",
         accessToken: "pk.eyJ1IjoiYWxyZWQiLCJhIjoiY2sydW1sM2EwMTY4bzNkbnZocmU2a3o3MiJ9.W5YwrLtEaSwtftKQravgTw",
-        maxZoom: 14,
+        maxZoom: 18,
+        minZoom: 12,
         zoomOffset: -1
     }).addTo(map);
 
@@ -51,12 +81,37 @@ include("navigation.php");
             let routes = JSON.parse(this.responseText)["Route"];
             for (let i = 0; i < routes.length; i++){
                 let coords = routes[i]["geo"]["line"];
-                L.polyline(coords, {color: "red"}).addTo(map);
+                lines.push(L.polyline(coords, {color: lineColour}).addTo(map));
             }
         }
     }
     http.open("GET", "../route", true);
     http.send();
+
+    function changeLineColour(newColour){
+        lineColour = newColour;
+        for (let i = 0; i < lines.length; i++){
+            lines[i].setStyle({color: newColour});
+        }
+    }
+
+    function openColourPicker(){
+        // Display colour picker dialog
+        document.getElementById("page_cover").style.display = "block";
+        // Set current colour in colour picker to the current line colour
+        document.getElementById("colour_button").value = lineColour;
+    }
+
+    function closeColourPicker(){
+        // Hide colour picker dialog
+        document.getElementById("page_cover").style.display = "none";
+    }
+
+    function chooseColour(){
+        let colour = document.getElementById("colour_button").value;
+        changeLineColour(colour);
+        closeColourPicker();
+    }
 </script>
 </body>
 </html>

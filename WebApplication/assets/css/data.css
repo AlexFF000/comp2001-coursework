@@ -7,3 +7,40 @@
     height: 100%;
     min-height: 75vh;
 }
+.page_cover{
+    position:fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: #000000d1;
+    /* Map uses z-index 1000 */
+    z-index: 1001;
+    /* Invisible until colour picker dialog is show */
+    display: none;
+}
+.colour_dialog{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: 37px;
+    margin-left: -100px;
+    background: white;
+    width: 200px;
+    height: 90px;
+}
+.colour_button{
+    width: 100%;
+}
+.colour_button_label{
+    width: 100%;
+    text-align: center;
+}
+.colour_dialog_cancel{
+    position: absolute;
+    left: 20px;
+}
+.colour_dialog_ok{
+    position: absolute;
+    right: 20px;
+}
